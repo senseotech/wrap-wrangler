@@ -10,11 +10,14 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "framer-motion": "^11.3.8",
     "lucide-react": "^0.383.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
-    "tailwind-merge": "^2.5.2"
+    "sonner": "^1.5.0",
+    "tailwind-merge": "^2.5.2",
+    "vaul": "^0.9.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",
