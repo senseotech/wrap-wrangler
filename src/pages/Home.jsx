@@ -1,0 +1,386 @@
+import React, { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ChevronDown, Copy, Check, Info } from 'lucide-react';
+import { toast } from 'sonner';
+import Onboarding from '../components/Onboarding';
+import WrapDiagram from '../components/WrapDiagram';
+import ExpertMode from '../components/ExpertMode';
+import ProtocolCard from '../components/ProtocolCard';
+
+export default function Home() {
+  const [dimensions, setDimensions] = useState({
+    width: '',
+    depth: '',
+    height: ''
+  });
+  const [unit, setUnit] = useState(() => {
+    return localStorage.getItem('preferredUnit') || 'inches';
+  });
+  const [unitDrawerOpen, setUnitDrawerOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const containerRef = React.useRef(null);
+  const startY = React.useRef(0);
+  const isPulling = React.useRef(false);
+
+  const handleTouchStart = useCallback((e) => {
+    if (containerRef.current?.scrollTop === 0) {
+      startY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isPulling.current) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - startY.current;
+    if (diff > 0 && containerRef.current?.scrollTop === 0) {
+      setPullDistance(Math.min(diff * 0.5, 80));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (pullDistance > 60) {
+      setIsRefreshing(true);
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }, 800);
+    } else {
+      setPullDistance(0);
+    }
+    isPulling.current = false;
+  }, [pullDistance]);
+
+  const handleUnitSelect = (selectedUnit) => {
+    setUnit(selectedUnit);
+    setUnitDrawerOpen(false);
+  };
+
+  React.useEffect(() => {
+    localStorage.setItem('preferredUnit', unit);
+  }, [unit]);
+
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'system';
+    const root = document.documentElement;
+    if (savedTheme === 'dark') {
+      root.classList.add('dark');
+    } else if (savedTheme === 'light') {
+      root.classList.remove('dark');
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      root.classList.add('dark');
+    }
+  }, []);
+
+  const handleInputChange = (field, value) => {
+    const numValue = value.replace(/[^0-9.]/g, '');
+    setDimensions(prev => ({ ...prev, [field]: numValue }));
+  };
+
+  const calculations = useMemo(() => {
+    const w = parseFloat(dimensions.width) || 0;
+    const d = parseFloat(dimensions.depth) || 0;
+    const h = parseFloat(dimensions.height) || 0;
+
+    if (w <= 0 || d <= 0 || h <= 0) return null;
+
+    const paperDiagonal = Math.sqrt(w * w + d * d) + (2 * h);
+    const paperSide = paperDiagonal / Math.sqrt(2);
+
+    return {
+      paperSide: Math.round(paperSide * 10) / 10,
+      paperDiagonal: Math.round(paperDiagonal * 10) / 10
+    };
+  }, [dimensions]);
+
+  const unitLabel = unit === 'inches' ? 'in' : 'cm';
+  const [expertMode, setExpertMode] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    if (!calculations) return;
+    const text = `Required Square Side: ${calculations.paperSide} ${unitLabel}\nPaper Diagonal: ${calculations.paperDiagonal} ${unitLabel}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success('Copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  }, [calculations, unitLabel]);
+
+  return (
+    <>
+    <Onboarding />
+    <div 
+      ref={containerRef}
+      className="min-h-full bg-[#FAF9F7] dark:bg-[#1a1a18] overflow-auto"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull to refresh indicator */}
+      <div 
+        className="flex justify-center overflow-hidden transition-all duration-200"
+        style={{ height: pullDistance }}
+      >
+        <div className={`flex items-center justify-center ${isRefreshing ? 'animate-spin' : ''}`}>
+          <div className="w-5 h-5 border-2 border-stone-300 dark:border-stone-600 border-t-stone-500 dark:border-t-stone-400 rounded-full" />
+        </div>
+      </div>
+      
+      <div className="max-w-md mx-auto px-6 py-12 md:py-20">
+        
+        {/* Header */}
+        <motion.header 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          className="mb-12"
+        >
+          <p className="text-xs tracking-[0.3em] text-stone-400 dark:text-stone-500 uppercase mb-4 select-none">
+            Lost Province Labs · Field Notes
+          </p>
+          <h1 className="font-serif text-2xl md:text-3xl text-stone-800 dark:text-stone-200 leading-tight mb-4 select-none">
+            Diagonal Wrap Protocol
+          </h1>
+          <p className="text-stone-500 dark:text-stone-400 text-sm leading-relaxed select-none">
+            An old geometric technique for wrapping rectangular parcels with a single square of paper.
+          </p>
+        </motion.header>
+
+        {/* Input Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-10"
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <span className="text-xs tracking-wide text-stone-400 dark:text-stone-500 uppercase select-none">Box Dimensions</span>
+            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
+            {/* Expert Mode toggle */}
+            <button
+              onClick={() => setExpertMode(e => !e)}
+              className="flex items-center gap-1.5 select-none group"
+              aria-label="Toggle Expert Mode"
+            >
+              <span className="text-[10px] tracking-[0.15em] uppercase text-stone-400 dark:text-stone-500 group-hover:text-stone-600 dark:group-hover:text-stone-300 transition-colors">Expert</span>
+              <div className={`relative w-7 h-4 rounded-full transition-colors duration-200 ${expertMode ? 'bg-stone-500 dark:bg-stone-400' : 'bg-stone-200 dark:bg-stone-700'}`}>
+                <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white dark:bg-stone-200 shadow-sm transition-transform duration-200 ${expertMode ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+              </div>
+            </button>
+            <Drawer open={unitDrawerOpen} onOpenChange={setUnitDrawerOpen}>
+              <DrawerTrigger asChild>
+                <button className="flex items-center gap-1 px-3 py-1 text-xs tracking-wide text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded select-none">
+                  {unit === 'cm' ? 'cm' : 'in'}
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </DrawerTrigger>
+              <DrawerContent className="bg-[#FAF9F7] dark:bg-[#1a1a18] border-stone-200 dark:border-stone-700">
+                <DrawerHeader>
+                  <DrawerTitle className="text-stone-800 dark:text-stone-200 select-none">Select Unit</DrawerTitle>
+                </DrawerHeader>
+                <div className="px-4 pb-8 space-y-2">
+                  {[
+                    { value: 'inches', label: 'Inches', short: 'in' },
+                    { value: 'cm', label: 'Centimeters', short: 'cm' }
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleUnitSelect(option.value)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors select-none ${
+                        unit === option.value
+                          ? 'bg-stone-200 dark:bg-stone-700 text-stone-800 dark:text-stone-200'
+                          : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
+                      }`}
+                    >
+                      <span className="text-sm">{option.label}</span>
+                      <span className="text-xs text-stone-400 dark:text-stone-500 font-mono">{option.short}</span>
+                    </button>
+                  ))}
+                </div>
+              </DrawerContent>
+            </Drawer>
+          </div>
+
+          <div className="border border-stone-200 dark:border-stone-700 rounded p-5 bg-white/30 dark:bg-stone-900/20">
+            <div className="space-y-4">
+              {[
+                { key: 'width', label: 'w', name: 'width' },
+                { key: 'depth', label: 'd', name: 'depth' },
+                { key: 'height', label: 'h', name: 'height' }
+              ].map((field) => (
+                <div key={field.key} className="flex items-center gap-4">
+                  <span className="w-16 text-sm text-stone-500 dark:text-stone-400 font-mono select-none">
+                    {field.name}
+                  </span>
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={dimensions[field.key]}
+                      onChange={(e) => handleInputChange(field.key, e.target.value)}
+                      placeholder="—"
+                      className="w-full bg-transparent border-b border-stone-200 dark:border-stone-700 py-2 text-lg text-stone-800 dark:text-stone-200 font-light tracking-wide placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
+                    />
+                    <span className="absolute right-0 top-1/2 -translate-y-1/2 text-xs text-stone-400 dark:text-stone-500">
+                      {unitLabel}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-4 tracking-wide select-none">
+              All calculations assume a perfect square sheet.
+            </p>
+          </div>
+        </motion.section>
+
+        {/* Results */}
+        <AnimatePresence>
+          {calculations && (
+            <motion.section
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-12"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-xs tracking-wide text-stone-400 dark:text-stone-500 uppercase select-none">Result</span>
+                <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
+                <button
+                  onClick={handleCopy}
+                  className="p-1.5 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors select-none"
+                  aria-label="Copy results"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+
+              <div className="font-mono text-sm space-y-1 mb-4">
+                <div className="flex items-baseline">
+                  <span className="text-stone-500 dark:text-stone-400 select-none w-44">Required Square Side</span>
+                  <span className="text-stone-800 dark:text-stone-200 tabular-nums">{calculations.paperSide}</span>
+                  <span className="text-stone-400 dark:text-stone-500 text-xs ml-1">{unitLabel}</span>
+                </div>
+                <div className="flex items-baseline">
+                  <span className="text-stone-500 dark:text-stone-400 select-none w-44">Paper Diagonal</span>
+                  <span className="text-stone-800 dark:text-stone-200 tabular-nums">{calculations.paperDiagonal}</span>
+                  <span className="text-stone-400 dark:text-stone-500 text-xs ml-1">{unitLabel}</span>
+                </div>
+              </div>
+
+              {/* Expert Mode breakdown */}
+              {expertMode && (
+                <ExpertMode dimensions={dimensions} calculations={calculations} unit={unit} />
+              )}
+
+              {/* Visual Diagram */}
+              <div className="mt-6 mb-2">
+                <WrapDiagram />
+              </div>
+
+              {/* Protocol Card */}
+              <ProtocolCard calculations={calculations} unit={unit} dimensions={dimensions} />
+
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* Protocol Description */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="border-t border-stone-200 dark:border-stone-700 pt-8"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-xs tracking-[0.2em] text-stone-400 dark:text-stone-500 uppercase select-none">
+              The Protocol
+            </h2>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="p-1 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors select-none">
+                  <Info className="w-3 h-3" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="bg-[#FAF9F7] dark:bg-[#1a1a18] border-stone-200 dark:border-stone-700 max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="font-serif text-lg text-stone-800 dark:text-stone-200 select-none">
+                    About This Protocol
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed select-none">
+                    The Diagonal Wrap Protocol is a geometric technique for wrapping rectangular parcels using a single square sheet of paper, oriented at 45°.
+                  </p>
+                  
+                  <div className="font-mono text-xs text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800/50 p-3 rounded select-none">
+                    <p className="mb-1">paper_diagonal = √(w² + d²) + 2h</p>
+                    <p>paper_side = paper_diagonal / √2</p>
+                  </div>
+
+                  <pre className="font-mono text-[10px] text-stone-400 dark:text-stone-500 leading-tight select-none">{`
+        ·  ·  ·  ·  ◇  ·  ·  ·  ·
+        ·  ·  ·  ╱  ·  ╲  ·  ·  ·
+        ·  ·  ╱  ·  ·  ·  ╲  ·  ·
+        ·  ╱  ·  ┌───┐  ·  ╲  ·
+        ◇  ·  ·  │ ▪ │  ·  ·  ◇
+        ·  ╲  ·  └───┘  ·  ╱  ·
+        ·  ·  ╲  ·  ·  ·  ╱  ·  ·
+        ·  ·  ·  ╲  ·  ╱  ·  ·  ·
+        ·  ·  ·  ·  ◇  ·  ·  ·  ·
+                  `}</pre>
+
+                  <p className="text-xs text-stone-400 dark:text-stone-500 italic select-none">
+                    Recovered from the Old North Workshop archives. Origin uncertain — likely predates 1920.
+                  </p>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <p className="text-stone-600 dark:text-stone-400 text-sm leading-relaxed mb-6 select-none">
+            Place the box centered on the square sheet. Rotate it 45 degrees. Fold each corner toward the center. The geometry locks the wrap into place with almost no trimming and often a single piece of tape.
+          </p>
+          <div className="flex items-center gap-3 text-xs text-stone-400 dark:text-stone-500 select-none">
+            <span className="w-1 h-1 rounded-full bg-stone-300 dark:bg-stone-600" />
+            <span>Old North Workshop archives</span>
+          </div>
+        </motion.section>
+
+        {/* Footer */}
+        <motion.footer
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+          className="mt-16 pt-8 border-t border-stone-200/50 dark:border-stone-700/50"
+        >
+          <p className="text-[10px] text-stone-400 dark:text-stone-500 text-center tracking-wide mb-2 select-none">
+            Filed under: Everyday Geometry · Protocol WRP‑01
+          </p>
+          <p className="text-[10px] text-stone-300 dark:text-stone-600 text-center italic mb-3 select-none">
+            Rediscovered, not invented.
+          </p>
+          <p className="text-[9px] text-stone-300 dark:text-stone-700 text-center font-mono select-none">
+            v1.2 · Revised 2026.02.10
+          </p>
+        </motion.footer>
+      </div>
+    </div>
+    </>
+  );
+}
