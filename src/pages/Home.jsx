@@ -140,7 +140,8 @@ export default function Home() {
     <Onboarding />
     <div 
       ref={containerRef}
-      className="min-h-full bg-[#FAF9F7] dark:bg-[#1a1a18] overflow-auto"
+      className="min-h-full overflow-auto"
+      style={{backgroundColor: 'var(--void)'}}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
