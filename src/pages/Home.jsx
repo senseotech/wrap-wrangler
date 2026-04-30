@@ -88,9 +88,23 @@ export default function Home() {
   }, []);
 
   const handleInputChange = (field, value) => {
+    // LPLWW-6: Strip non-numeric but preserve empty string for clean UX
     const numValue = value.replace(/[^0-9.]/g, '');
     setDimensions(prev => ({ ...prev, [field]: numValue }));
   };
+
+  // LPLWW-6: Derive validation message from current dimension state
+  const validationMessage = useMemo(() => {
+    const hasAnyValue = Object.values(dimensions).some(v => v !== '');
+    if (!hasAnyValue) return null;
+    const w = parseFloat(dimensions.width) || 0;
+    const d = parseFloat(dimensions.depth) || 0;
+    const h = parseFloat(dimensions.height) || 0;
+    if (w === 0 || d === 0 || h === 0) {
+      return 'All three dimensions need a value greater than zero to calculate.';
+    }
+    return null;
+  }, [dimensions]);
 
   const calculations = useMemo(() => {
     const w = parseFloat(dimensions.width) || 0;
@@ -248,6 +262,21 @@ export default function Home() {
             </p>
           </div>
         </motion.section>
+
+        {/* LPLWW-6: Validation message for zero/incomplete dimensions */}
+        <AnimatePresence>
+          {validationMessage && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-xs text-stone-400 dark:text-stone-500 font-mono tracking-wide mb-6"
+            >
+              {validationMessage}
+            </motion.p>
+          )}
+        </AnimatePresence>
 
         {/* Results */}
         <AnimatePresence>

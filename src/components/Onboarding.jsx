@@ -5,12 +5,12 @@ export default function Onboarding() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const dismissed = localStorage.getItem('wrp_onboarding_dismissed');
-    if (!dismissed) setVisible(true);
+    // LPLWW-4: Show every session — remove persistent localStorage flag
+    // "Geometry is a kindness" is the first impression and must be seen
+    setVisible(true);
   }, []);
 
   const dismiss = () => {
-    localStorage.setItem('wrp_onboarding_dismissed', '1');
     setVisible(false);
   };
 
