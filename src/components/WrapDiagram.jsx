@@ -5,7 +5,7 @@ export default function WrapDiagram({ className = '' }) {
     <svg
       viewBox="0 0 120 120"
       xmlns="http://www.w3.org/2000/svg"
-      className={`w-full max-w-[180px] mx-auto opacity-50 dark:opacity-30 ${className}`}
+      className={`w-full max-w-[180px] mx-auto opacity-60 dark:opacity-50 ${className}`}
       aria-hidden="true"
     >
       {/* Outer square rotated 45° (diamond) */}

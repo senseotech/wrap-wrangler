@@ -339,7 +339,8 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="border-t border-stone-200 dark:border-stone-700 pt-8"
+          className="border-t pt-8"
+          style={{borderColor: 'var(--border)'}}
         >
           <div className="flex items-center gap-2 mb-4">
             <h2 className="text-xs tracking-[0.2em] uppercase select-none" style={{color: 'var(--text-muted)'}}>
@@ -347,7 +348,7 @@ export default function Home() {
             </h2>
             <Dialog>
               <DialogTrigger asChild>
-                <button className="p-1 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors select-none">
+                <button className="p-1 transition-colors select-none" style={{color: 'var(--text-muted)'}}>
                   <Info className="w-3 h-3" />
                 </button>
               </DialogTrigger>
@@ -386,11 +387,11 @@ export default function Home() {
               </DialogContent>
             </Dialog>
           </div>
-          <p className="text-stone-600 dark:text-stone-400 text-sm leading-relaxed mb-6 select-none">
+            <p className="text-sm leading-relaxed mb-6 select-none" style={{fontFamily: 'var(--font-body)', color: 'var(--text-secondary)', fontWeight: 300}}>
             Place the box centered on the square sheet. Rotate it 45 degrees. Fold each corner toward the center. The geometry locks the wrap into place with almost no trimming and often a single piece of tape.
           </p>
-          <div className="flex items-center gap-3 text-xs text-stone-400 dark:text-stone-500 select-none">
-            <span className="w-1 h-1 rounded-full bg-stone-300 dark:bg-stone-600" />
+          <div className="flex items-center gap-3 text-xs select-none" style={{color: 'var(--text-muted)'}}>
+            <span className="w-1 h-1 rounded-full" style={{backgroundColor: 'var(--amber-dim)'}} />
             <span>Old North Workshop archives</span>
           </div>
         </motion.section>
@@ -400,15 +401,16 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-16 pt-8 border-t border-stone-200/50 dark:border-stone-700/50"
+          className="mt-16 pt-8"
+          style={{borderTop: '1px solid var(--border)'}}
         >
-          <p className="text-[10px] text-stone-400 dark:text-stone-500 text-center tracking-wide mb-2 select-none">
+          <p className="text-[10px] text-center tracking-wide mb-2 select-none" style={{color: 'var(--text-muted)'}}>
             Filed under: Everyday Geometry · Protocol WRP‑01
           </p>
-          <p className="text-[10px] text-stone-300 dark:text-stone-600 text-center italic mb-3 select-none">
+          <p className="text-[10px] text-center italic mb-3 select-none" style={{fontFamily: 'var(--font-body)', color: 'var(--text-dim)', fontWeight: 300}}>
             Rediscovered, not invented.
           </p>
-          <p className="text-[9px] text-stone-300 dark:text-stone-700 text-center font-mono select-none">
+          <p className="text-[9px] text-center select-none" style={{fontFamily: 'var(--font-mono)', color: 'var(--text-dim)'}}>
             v1.2 · Revised 2026.02.10
           </p>
         </motion.footer>
