@@ -5,9 +5,13 @@ export default function Onboarding() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // LPLWW-4: Show every session — remove persistent localStorage flag
-    // "Geometry is a kindness" is the first impression and must be seen
-    setVisible(true);
+    // LPLWW-14: Use sessionStorage so splash shows once per session
+    // but NOT on every internal route change (Settings → Calculator)
+    const shown = sessionStorage.getItem('splash_shown');
+    if (!shown) {
+      setVisible(true);
+      sessionStorage.setItem('splash_shown', '1');
+    }
   }, []);
 
   const dismiss = () => {
@@ -29,14 +33,18 @@ export default function Onboarding() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.5, delay: 0.9 }}
-            className="bg-[#FAF9F7] dark:bg-[#1a1a18] border border-stone-200 dark:border-stone-700 rounded px-6 py-5 max-w-xs w-full"
+            className="px-6 py-5 max-w-xs w-full"
+            style={{backgroundColor: 'var(--deep)', border: '1px solid var(--border)', borderRadius: '2px'}}
           >
-            <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed mb-4 italic">
+            <p className="text-sm leading-relaxed mb-5 italic select-none" style={{fontFamily: 'var(--font-body)', color: 'var(--text-secondary)', fontWeight: 300}}>
               "Welcome to the Wrapping Protocol Terminal. Geometry is a kindness."
             </p>
             <button
               onClick={dismiss}
-              className="text-xs tracking-[0.2em] uppercase text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors select-none"
+              className="text-xs tracking-[0.2em] uppercase transition-colors select-none"
+              style={{color: 'var(--amber)'}}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--amber-bright)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--amber)'}
             >
               Begin
             </button>

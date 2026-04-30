@@ -3,9 +3,44 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* LPL Color System — from LPOE Design System Reference */
+    --void: #0d0e0f;
+    --deep: #13151a;
+    --surface: #1a1d24;
+    --panel: #20242e;
+    --border: #2c3140;
+    --border-bright: #3d4457;
+
+    --text-primary: #e8e2d4;
+    --text-secondary: #9a9488;
+    --text-muted: #5a5650;
+    --text-dim: #3a3830;
+
+    /* Primary accent — Amber */
+    --amber: #c8883a;
+    --amber-bright: #e0a050;
+    --amber-dim: #7a5020;
+    --amber-glow: rgba(200, 136, 58, 0.12);
+
+    /* Secondary accent — LP Blue */
+    --lp-blue: #22657f;
+    --lp-blue-bright: #3d8faa;
+    --lp-blue-dim: #143d4e;
+    --lp-blue-glow: rgba(34, 101, 127, 0.15);
+
+    /* LPL Typography */
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'Crimson Pro', Georgia, serif;
+    --font-mono: 'Space Mono', 'Courier New', monospace;
+
+    /* Spacing unit */
+    --unit: 8px;
+  }
+
   * {
     box-sizing: border-box;
-    border-color: rgb(41 37 36); /* stone-800 equivalent */
+    border-color: var(--border);
   }
 
   html {
@@ -14,10 +49,30 @@
   }
 
   body {
-    background-color: #1a1a18;
-    color: #e7e5e4;
+    background-color: var(--void);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior: none;
   }
+
+  /* Apply LPL fonts via Tailwind utility extension */
+  .font-display { font-family: var(--font-display); }
+  .font-body { font-family: var(--font-body); }
+  .font-mono { font-family: var(--font-mono); }
+}
+
+@layer utilities {
+  /* LPL accent color utilities */
+  .text-amber { color: var(--amber); }
+  .text-amber-bright { color: var(--amber-bright); }
+  .text-amber-dim { color: var(--amber-dim); }
+  .text-lp-blue { color: var(--lp-blue); }
+  .text-lp-blue-bright { color: var(--lp-blue-bright); }
+  .bg-amber-glow { background-color: var(--amber-glow); }
+  .bg-lp-blue-glow { background-color: var(--lp-blue-glow); }
+  .border-amber { border-color: var(--amber); }
+  .border-amber-dim { border-color: var(--amber-dim); }
+  .border-lp-blue { border-color: var(--lp-blue); }
 }

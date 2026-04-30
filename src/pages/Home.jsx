@@ -164,13 +164,13 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="mb-12"
         >
-          <p className="text-xs tracking-[0.3em] text-stone-400 dark:text-stone-500 uppercase mb-4 select-none">
+          <p className="text-xs tracking-[0.3em] uppercase mb-4 select-none text-amber">
             Lost Province Labs · Field Notes
           </p>
-          <h1 className="font-serif text-2xl md:text-3xl text-stone-800 dark:text-stone-200 leading-tight mb-4 select-none">
+          <h1 className="text-2xl md:text-3xl leading-tight mb-4 select-none" style={{fontFamily: 'var(--font-display)', color: 'var(--text-primary)'}}>
             Diagonal Wrap Protocol
           </h1>
-          <p className="text-stone-500 dark:text-stone-400 text-sm leading-relaxed select-none">
+          <p className="text-sm leading-relaxed select-none" style={{fontFamily: 'var(--font-body)', color: 'var(--text-secondary)', fontWeight: 300}}>
             An old geometric technique for wrapping rectangular parcels with a single square of paper.
           </p>
         </motion.header>
@@ -183,8 +183,8 @@ export default function Home() {
           className="mb-10"
         >
           <div className="flex items-center gap-4 mb-6">
-            <span className="text-xs tracking-wide text-stone-400 dark:text-stone-500 uppercase select-none">Box Dimensions</span>
-            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
+            <span className="text-xs tracking-wide uppercase select-none" style={{color: 'var(--text-muted)'}}>Box Dimensions</span>
+            <div className="flex-1 h-px" style={{backgroundColor: 'var(--amber-dim)'}} />
             {/* Expert Mode toggle */}
             <button
               onClick={() => setExpertMode(e => !e)}
@@ -192,7 +192,7 @@ export default function Home() {
               aria-label="Toggle Expert Mode"
             >
               <span className="text-[10px] tracking-[0.15em] uppercase text-stone-400 dark:text-stone-500 group-hover:text-stone-600 dark:group-hover:text-stone-300 transition-colors">Expert</span>
-              <div className={`relative w-7 h-4 rounded-full transition-colors duration-200 ${expertMode ? 'bg-stone-500 dark:bg-stone-400' : 'bg-stone-200 dark:bg-stone-700'}`}>
+              <div className={`relative w-7 h-4 rounded-full transition-colors duration-200`} style={{backgroundColor: expertMode ? 'var(--amber)' : 'var(--border)'}}>
                 <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white dark:bg-stone-200 shadow-sm transition-transform duration-200 ${expertMode ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
               </div>
             </button>
@@ -289,11 +289,14 @@ export default function Home() {
               className="mb-12"
             >
               <div className="flex items-center gap-4 mb-6">
-                <span className="text-xs tracking-wide text-stone-400 dark:text-stone-500 uppercase select-none">Result</span>
-                <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
+                <span className="text-xs tracking-wide uppercase select-none" style={{color: 'var(--text-muted)'}}>Result</span>
+                <div className="flex-1 h-px" style={{backgroundColor: 'var(--amber-dim)'}} />
                 <button
                   onClick={handleCopy}
-                  className="p-1.5 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors select-none"
+                  className="p-1.5 transition-colors select-none"
+                  style={{color: copied ? 'var(--lp-blue-bright)' : 'var(--text-muted)'}}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--lp-blue-bright)'}
+                  onMouseLeave={e => e.currentTarget.style.color = copied ? 'var(--lp-blue-bright)' : 'var(--text-muted)'}
                   aria-label="Copy results"
                 >
                   {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -302,13 +305,13 @@ export default function Home() {
 
               <div className="font-mono text-sm space-y-1 mb-4">
                 <div className="flex items-baseline">
-                  <span className="text-stone-500 dark:text-stone-400 select-none w-44">Required Square Side</span>
-                  <span className="text-stone-800 dark:text-stone-200 tabular-nums">{calculations.paperSide}</span>
+                  <span className="select-none w-44" style={{color: 'var(--text-muted)'}}>Required Square Side</span>
+                  <span className="tabular-nums" style={{color: 'var(--amber-bright)'}}>{calculations.paperSide}</span>
                   <span className="text-stone-400 dark:text-stone-500 text-xs ml-1">{unitLabel}</span>
                 </div>
                 <div className="flex items-baseline">
-                  <span className="text-stone-500 dark:text-stone-400 select-none w-44">Paper Diagonal</span>
-                  <span className="text-stone-800 dark:text-stone-200 tabular-nums">{calculations.paperDiagonal}</span>
+                  <span className="select-none w-44" style={{color: 'var(--text-muted)'}}>Paper Diagonal</span>
+                  <span className="tabular-nums" style={{color: 'var(--amber-bright)'}}>{calculations.paperDiagonal}</span>
                   <span className="text-stone-400 dark:text-stone-500 text-xs ml-1">{unitLabel}</span>
                 </div>
               </div>
@@ -338,7 +341,7 @@ export default function Home() {
           className="border-t border-stone-200 dark:border-stone-700 pt-8"
         >
           <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-xs tracking-[0.2em] text-stone-400 dark:text-stone-500 uppercase select-none">
+            <h2 className="text-xs tracking-[0.2em] uppercase select-none" style={{color: 'var(--text-muted)'}}>
               The Protocol
             </h2>
             <Dialog>
