@@ -1,26 +1,79 @@
 import React from 'react';
 import WrapDiagram from './WrapDiagram';
-import ReactDOMServer from 'react-dom/server';
 
-export default function ProtocolCard({ calculations, unit }) {
+/**
+ * Generates the print-window SVG string using the same geometry as WrapDiagram.
+ * If WrapDiagram's layout logic changes, keep this in sync.
+ */
+function buildPrintDiagramSvg(dimensions) {
+  const w = parseFloat(dimensions?.width) || 0;
+  const d = parseFloat(dimensions?.depth) || 0;
+  const hasValidDims = w > 0 && d > 0;
+
+  const CENTER = 60;
+  const MAX_HALF = 54;
+
+  let boxW, boxH, diamondHalf;
+
+  if (hasValidDims) {
+    const aspect = d / w;
+    const maxBoxHalf = MAX_HALF * 0.52;
+    if (w >= d) {
+      boxW = maxBoxHalf * 2;
+      boxH = boxW * aspect;
+    } else {
+      boxH = maxBoxHalf * 2;
+      boxW = boxH / aspect;
+    }
+    const boxDiagHalf = Math.sqrt((boxW / 2) ** 2 + (boxH / 2) ** 2);
+    diamondHalf = Math.min(boxDiagHalf + MAX_HALF * 0.38, MAX_HALF);
+  } else {
+    boxW = 44;
+    boxH = 36;
+    diamondHalf = MAX_HALF;
+  }
+
+  const halfW = boxW / 2;
+  const halfH = boxH / 2;
+  const boxLeft   = CENTER - halfW;
+  const boxRight  = CENTER + halfW;
+  const boxTop    = CENTER - halfH;
+  const boxBottom = CENTER + halfH;
+
+  const dN = [CENTER,               CENTER - diamondHalf];
+  const dE = [CENTER + diamondHalf, CENTER              ];
+  const dS = [CENTER,               CENTER + diamondHalf];
+  const dW = [CENTER - diamondHalf, CENTER              ];
+
+  const pt = (p) => `${p[0]},${p[1]}`;
+  const ln = (x1, y1, x2, y2, sw = '0.7') =>
+    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#888" stroke-width="${sw}"/>`;
+
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="80" height="80" style="opacity:0.4">
+    <polygon points="${pt(dN)} ${pt(dE)} ${pt(dS)} ${pt(dW)}" fill="none" stroke="#555" stroke-width="0.8" stroke-dasharray="3 2"/>
+    <rect x="${boxLeft}" y="${boxTop}" width="${boxW}" height="${boxH}" fill="none" stroke="#333" stroke-width="1.2"/>
+    ${ln(dW[0], dW[1], dE[0], dE[1], '0.5')}
+    ${ln(dN[0], dN[1], dS[0], dS[1], '0.5')}
+    ${ln(dN[0], dN[1], boxLeft,  boxTop)}
+    ${ln(dN[0], dN[1], boxRight, boxTop)}
+    ${ln(dE[0], dE[1], boxRight, boxTop)}
+    ${ln(dE[0], dE[1], boxRight, boxBottom)}
+    ${ln(dS[0], dS[1], boxRight, boxBottom)}
+    ${ln(dS[0], dS[1], boxLeft,  boxBottom)}
+    ${ln(dW[0], dW[1], boxLeft,  boxBottom)}
+    ${ln(dW[0], dW[1], boxLeft,  boxTop)}
+    <circle cx="${dN[0]}" cy="${dN[1]}" r="1.5" fill="#888"/>
+    <circle cx="${dE[0]}" cy="${dE[1]}" r="1.5" fill="#888"/>
+    <circle cx="${dS[0]}" cy="${dS[1]}" r="1.5" fill="#888"/>
+    <circle cx="${dW[0]}" cy="${dW[1]}" r="1.5" fill="#888"/>
+  </svg>`;
+}
+
+export default function ProtocolCard({ calculations, unit, dimensions }) {
   const unitLabel = unit === 'inches' ? 'in' : 'cm';
 
   const handlePrint = () => {
-    // Render the diagram to an SVG string
-    const diagramSvg = `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="80" height="80" style="opacity:0.4">
-      <polygon points="60,4 116,60 60,116 4,60" fill="none" stroke="#555" stroke-width="0.8" stroke-dasharray="3 2"/>
-      <rect x="38" y="42" width="44" height="36" fill="none" stroke="#333" stroke-width="1.2"/>
-      <line x1="4" y1="60" x2="116" y2="60" stroke="#888" stroke-width="0.5" stroke-dasharray="2 3"/>
-      <line x1="60" y1="4" x2="60" y2="116" stroke="#888" stroke-width="0.5" stroke-dasharray="2 3"/>
-      <line x1="60" y1="4" x2="38" y2="42" stroke="#888" stroke-width="0.7"/>
-      <line x1="116" y1="60" x2="82" y2="42" stroke="#888" stroke-width="0.7"/>
-      <line x1="60" y1="116" x2="82" y2="78" stroke="#888" stroke-width="0.7"/>
-      <line x1="4" y1="60" x2="38" y2="78" stroke="#888" stroke-width="0.7"/>
-      <circle cx="60" cy="4" r="1.5" fill="#888"/>
-      <circle cx="116" cy="60" r="1.5" fill="#888"/>
-      <circle cx="60" cy="116" r="1.5" fill="#888"/>
-      <circle cx="4" cy="60" r="1.5" fill="#888"/>
-    </svg>`;
+    const diagramSvg = buildPrintDiagramSvg(dimensions);
 
     const printWindow = window.open('', '_blank', 'width=600,height=400');
     printWindow.document.write(`
@@ -120,16 +173,15 @@ export default function ProtocolCard({ calculations, unit }) {
                   <span class="value">${calculations?.paperDiagonal}</span>
                   <span class="unit">${unitLabel}</span>
                 </div>
-                <span class="formula">(\u221a(w\u00b2+d\u00b2) + 2h) \u00f7 \u221a2</span>
+                <span class="formula">(√(w²+d²) + 2h) ÷ √2</span>
               </div>
               ${diagramSvg}
             </div>
             <hr class="divider">
-            <span class="footer">Lost Province Labs \u00b7 Protocol WRP\u201101</span>
+            <span class="footer">Lost Province Labs · Protocol WRP‑01</span>
             <span class="rediscovered">Rediscovered, not invented.</span>
           </div>
           <script>
-            // Wait for fonts then print
             document.fonts.ready.then(() => {
               window.print();
               window.addEventListener('afterprint', () => window.close());
@@ -165,7 +217,7 @@ export default function ProtocolCard({ calculations, unit }) {
             (√(w²+d²) + 2h) ÷ √2
           </p>
         </div>
-        <WrapDiagram className="w-16 h-16 shrink-0" />
+        <WrapDiagram dimensions={dimensions} calculations={calculations} className="w-16 h-16 shrink-0" />
       </div>
 
       <div className="mt-4 pt-4 flex items-center justify-between"

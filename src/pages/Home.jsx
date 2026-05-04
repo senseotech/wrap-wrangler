@@ -31,11 +31,13 @@ export default function Home() {
     return localStorage.getItem('preferredUnit') || 'inches';
   });
   const [unitDrawerOpen, setUnitDrawerOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const containerRef = React.useRef(null);
   const startY = React.useRef(0);
   const isPulling = React.useRef(false);
+
+  const PULL_THRESHOLD = 60;
+  const hasAnyDimension = Object.values(dimensions).some(v => v !== '');
 
   const handleTouchStart = useCallback((e) => {
     if (containerRef.current?.scrollTop === 0) {
@@ -54,17 +56,22 @@ export default function Home() {
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    if (pullDistance > 60) {
-      setIsRefreshing(true);
-      setTimeout(() => {
-        setIsRefreshing(false);
-        setPullDistance(0);
-      }, 800);
+    if (pullDistance > PULL_THRESHOLD && hasAnyDimension) {
+      const previous = { ...dimensions };
+      setDimensions({ width: '', depth: '', height: '' });
+      setPullDistance(0);
+      toast('Measurements cleared.', {
+        duration: 4000,
+        action: {
+          label: 'Undo',
+          onClick: () => setDimensions(previous),
+        },
+      });
     } else {
       setPullDistance(0);
     }
     isPulling.current = false;
-  }, [pullDistance]);
+  }, [pullDistance, dimensions, hasAnyDimension]);
 
   const handleUnitSelect = (selectedUnit) => {
     setUnit(selectedUnit);
@@ -74,18 +81,6 @@ export default function Home() {
   React.useEffect(() => {
     localStorage.setItem('preferredUnit', unit);
   }, [unit]);
-
-  React.useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'system';
-    const root = document.documentElement;
-    if (savedTheme === 'dark') {
-      root.classList.add('dark');
-    } else if (savedTheme === 'light') {
-      root.classList.remove('dark');
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      root.classList.add('dark');
-    }
-  }, []);
 
   const handleInputChange = (field, value) => {
     // LPLWW-6: Strip non-numeric but preserve empty string for clean UX
@@ -146,14 +141,17 @@ export default function Home() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Pull to refresh indicator */}
-      <div 
-        className="flex justify-center overflow-hidden transition-all duration-200"
+      {/* Pull to reset indicator */}
+      <div
+        className="flex justify-center items-end overflow-hidden transition-all duration-200"
         style={{ height: pullDistance }}
       >
-        <div className={`flex items-center justify-center ${isRefreshing ? 'animate-spin' : ''}`}>
-          <div className="w-5 h-5 border-2 border-stone-300 dark:border-stone-600 border-t-stone-500 dark:border-t-stone-400 rounded-full" />
-        </div>
+        <span
+          className="text-[10px] tracking-[0.2em] uppercase pb-2 transition-colors duration-200 select-none"
+          style={{ color: pullDistance > PULL_THRESHOLD ? 'var(--amber)' : 'var(--text-dim)' }}
+        >
+          {pullDistance > PULL_THRESHOLD ? 'Release to clear' : 'Pull to clear'}
+        </span>
       </div>
       
       <div className="max-w-md mx-auto px-6 py-12 md:py-20">
@@ -324,7 +322,7 @@ export default function Home() {
 
               {/* Visual Diagram */}
               <div className="mt-6 mb-2">
-                <WrapDiagram />
+                <WrapDiagram dimensions={dimensions} calculations={calculations} />
               </div>
 
               {/* Protocol Card */}

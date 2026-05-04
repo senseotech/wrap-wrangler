@@ -22,8 +22,7 @@ export default function Layout({ children, currentPageName }) {
       <header
         className="sticky top-0 z-50 flex items-center justify-between px-6 h-12"
         style={{
-          backgroundColor: 'transparent',
-          paddingTop: isChildScreen ? 'env(safe-area-inset-top)' : undefined
+          backgroundColor: 'transparent'
         }}
       >
         {/* Left — back button for child screens, empty spacer for Home */}
