@@ -39,19 +39,28 @@ export default function Home() {
   const PULL_THRESHOLD = 60;
   const hasAnyDimension = Object.values(dimensions).some(v => v !== '');
 
+  // Track whether the touch started at the top — not just whether we arrive there
+  const startedAtTop = React.useRef(false);
+
   const handleTouchStart = useCallback((e) => {
-    if (containerRef.current?.scrollTop === 0) {
-      startY.current = e.touches[0].clientY;
-      isPulling.current = true;
-    }
+    startY.current = e.touches[0].clientY;
+    // Only arm the gesture if we're genuinely resting at the top when the finger lands
+    startedAtTop.current = containerRef.current?.scrollTop === 0;
+    isPulling.current = false;
   }, []);
 
   const handleTouchMove = useCallback((e) => {
-    if (!isPulling.current) return;
+    if (!startedAtTop.current) return;
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY.current;
+    // Must be moving downward and still at the top — discard upward flicks that land at top
     if (diff > 0 && containerRef.current?.scrollTop === 0) {
+      isPulling.current = true;
       setPullDistance(Math.min(diff * 0.5, 80));
+    } else if (diff < 0) {
+      // Moving upward — disarm entirely so a scroll-up-then-down doesn't trigger
+      startedAtTop.current = false;
+      setPullDistance(0);
     }
   }, []);
 
