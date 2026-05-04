@@ -11,7 +11,7 @@ export default function Layout({ children, currentPageName }) {
     <div
       className="flex flex-col"
       style={{
-        minHeight: '100dvh',
+        height: '100dvh',
         backgroundColor: 'var(--void)',
         overscrollBehavior: 'none',
         paddingTop: 'env(safe-area-inset-top)',

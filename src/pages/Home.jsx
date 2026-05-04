@@ -45,7 +45,10 @@ export default function Home() {
   const handleTouchStart = useCallback((e) => {
     startY.current = e.touches[0].clientY;
     // Only arm the gesture if we're genuinely resting at the top when the finger lands
-    startedAtTop.current = containerRef.current?.scrollTop === 0;
+    // Use the scroll parent (main) via closest, falling back to window.scrollY
+    const scrollParent = containerRef.current?.closest('main');
+    const scrollTop = scrollParent ? scrollParent.scrollTop : window.scrollY;
+    startedAtTop.current = scrollTop === 0;
     isPulling.current = false;
   }, []);
 
@@ -53,8 +56,10 @@ export default function Home() {
     if (!startedAtTop.current) return;
     const currentY = e.touches[0].clientY;
     const diff = currentY - startY.current;
+    const scrollParent = containerRef.current?.closest('main');
+    const scrollTop = scrollParent ? scrollParent.scrollTop : window.scrollY;
     // Must be moving downward and still at the top — discard upward flicks that land at top
-    if (diff > 0 && containerRef.current?.scrollTop === 0) {
+    if (diff > 0 && scrollTop === 0) {
       isPulling.current = true;
       setPullDistance(Math.min(diff * 0.5, 80));
     } else if (diff < 0) {
@@ -142,9 +147,9 @@ export default function Home() {
   return (
     <>
     <Onboarding />
-    <div 
+    <div
       ref={containerRef}
-      className="min-h-full overflow-auto"
+      className="min-h-full"
       style={{backgroundColor: 'var(--void)'}}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
