@@ -9,12 +9,14 @@ import {
 } from "@/components/ui/drawer";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ChevronDown, Copy, Check, Info } from 'lucide-react';
+import { ChevronDown, Copy, Check, Info, X } from 'lucide-react';
 import { toast } from 'sonner';
 import Onboarding from '../components/Onboarding';
 import WrapDiagram from '../components/WrapDiagram';
@@ -350,21 +352,30 @@ export default function Home() {
               The Protocol
             </h2>
             <Dialog>
-              <DialogTrigger asChild>
-                <button className="p-1 transition-colors select-none" style={{color: 'var(--text-muted)'}}>
-                  <Info className="w-3 h-3" />
-                </button>
+              <DialogTrigger
+                aria-label="About This Protocol"
+                className="-my-3 -ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+                style={{color: 'var(--text-secondary)'}}
+              >
+                <Info aria-hidden="true" className="w-3 h-3" />
               </DialogTrigger>
               <DialogContent className="bg-[#FAF9F7] dark:bg-[#1a1a18] border-stone-200 dark:border-stone-700 max-w-sm">
                 <DialogHeader>
                   <DialogTitle className="font-serif text-lg text-stone-800 dark:text-stone-200 select-none">
                     About This Protocol
                   </DialogTitle>
+                  <DialogClose
+                    aria-label="Close"
+                    className="-my-2 -mr-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+                    style={{color: 'var(--text-secondary)'}}
+                  >
+                    <X aria-hidden="true" className="w-4 h-4" />
+                  </DialogClose>
                 </DialogHeader>
                 <div className="space-y-4 text-sm">
-                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed select-none">
+                  <DialogDescription className="text-stone-600 dark:text-stone-400 leading-relaxed select-none">
                     The Diagonal Wrap Protocol is a geometric technique for wrapping rectangular parcels using a single square sheet of paper, oriented at 45°.
-                  </p>
+                  </DialogDescription>
                   
                   <div className="font-mono text-xs text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800/50 p-3 rounded select-none">
                     <p className="mb-1">paper_diagonal = √(w² + d²) + 2h</p>
