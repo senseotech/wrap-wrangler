@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'sonner';
 import WrapDiagram from './WrapDiagram';
 
 /**
@@ -73,9 +74,15 @@ export default function ProtocolCard({ calculations, unit, dimensions }) {
   const unitLabel = unit === 'inches' ? 'in' : 'cm';
 
   const handlePrint = () => {
-    const diagramSvg = buildPrintDiagramSvg(dimensions);
-
     const printWindow = window.open('', '_blank', 'width=600,height=400');
+    if (!printWindow) {
+      toast('Print window could not open', {
+        description: 'Allow pop-ups for this site, then try Print again.',
+      });
+      return;
+    }
+
+    const diagramSvg = buildPrintDiagramSvg(dimensions);
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>

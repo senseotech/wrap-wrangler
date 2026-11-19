@@ -121,16 +121,42 @@ export default function Home() {
 
   const unitLabel = unit === 'inches' ? 'in' : 'cm';
   const [expertMode, setExpertMode] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState(null);
+  const resultText = calculations
+    ? `Required Square Side: ${calculations.paperSide} ${unitLabel}\nPaper Diagonal: ${calculations.paperDiagonal} ${unitLabel}`
+    : '';
+  const copyPending = copyFeedback?.status === 'pending';
+  const copied = copyFeedback?.status === 'copied' && copyFeedback.text === resultText;
+  const showManualCopy = copyFeedback?.status === 'manual' && copyFeedback.text === resultText;
 
-  const handleCopy = useCallback(() => {
-    if (!calculations) return;
-    const text = `Required Square Side: ${calculations.paperSide} ${unitLabel}\nPaper Diagonal: ${calculations.paperDiagonal} ${unitLabel}`;
-    navigator.clipboard.writeText(text);
-    setCopied(true);
+  React.useEffect(() => {
+    if (copyFeedback?.status !== 'copied') return;
+    const timeout = setTimeout(() => {
+      setCopyFeedback(current => current === copyFeedback ? null : current);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [copyFeedback]);
+
+  const handleCopy = async () => {
+    if (!resultText || copyPending) return;
+
+    const clipboard = navigator.clipboard;
+    if (!clipboard?.writeText) {
+      setCopyFeedback({ status: 'manual', text: resultText });
+      return;
+    }
+
+    setCopyFeedback({ status: 'pending', text: resultText });
+    try {
+      await clipboard.writeText(resultText);
+    } catch {
+      setCopyFeedback({ status: 'manual', text: resultText });
+      return;
+    }
+
+    setCopyFeedback({ status: 'copied', text: resultText });
     toast.success('Copied to clipboard');
-    setTimeout(() => setCopied(false), 2000);
-  }, [calculations, unitLabel]);
+  };
 
   return (
     <>
@@ -305,6 +331,7 @@ export default function Home() {
                 onMouseEnter={e => e.currentTarget.style.color = 'var(--lp-blue-bright)'}
                 onMouseLeave={e => e.currentTarget.style.color = copied ? 'var(--lp-blue-bright)' : 'var(--text-muted)'}
                 aria-label="Copy results"
+                aria-disabled={copyPending}
               >
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
@@ -322,6 +349,25 @@ export default function Home() {
                 <span className="text-stone-400 dark:text-stone-500 text-xs ml-1">{unitLabel}</span>
               </div>
             </div>
+
+            <p
+              id="manual-copy-instructions"
+              role="status"
+              className={showManualCopy ? 'mt-4 text-sm text-stone-400' : undefined}
+            >
+              {showManualCopy && 'Clipboard access is unavailable. Select the result text and copy it manually.'}
+            </p>
+            {showManualCopy && (
+              <textarea
+                aria-label="Result text"
+                aria-describedby="manual-copy-instructions"
+                className="mt-2 w-full rounded border border-stone-700 bg-transparent p-3 font-mono text-base text-stone-200 focus-visible:outline-amber md:text-sm"
+                onFocus={(event) => event.currentTarget.select()}
+                readOnly
+                rows={4}
+                value={resultText}
+              />
+            )}
 
             {/* Expert Mode breakdown */}
             {expertMode && (
