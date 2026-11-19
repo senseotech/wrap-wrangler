@@ -6,8 +6,8 @@ import WrapDiagram from './WrapDiagram';
  * If WrapDiagram's layout logic changes, keep this in sync.
  */
 function buildPrintDiagramSvg(dimensions) {
-  const w = parseFloat(dimensions?.width) || 0;
-  const d = parseFloat(dimensions?.depth) || 0;
+  const w = dimensions?.width ?? 0;
+  const d = dimensions?.depth ?? 0;
   const hasValidDims = w > 0 && d > 0;
 
   const CENTER = 60;

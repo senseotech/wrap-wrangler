@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Drawer,
   DrawerContent,
@@ -20,6 +20,7 @@ import Onboarding from '../components/Onboarding';
 import WrapDiagram from '../components/WrapDiagram';
 import ExpertMode from '../components/ExpertMode';
 import ProtocolCard from '../components/ProtocolCard';
+import { validateDimensions } from '../lib/measurements';
 
 export default function Home() {
   const [dimensions, setDimensions] = useState({
@@ -97,39 +98,24 @@ export default function Home() {
   }, [unit]);
 
   const handleInputChange = (field, value) => {
-    // LPLWW-6: Strip non-numeric but preserve empty string for clean UX
-    const numValue = value.replace(/[^0-9.]/g, '');
-    setDimensions(prev => ({ ...prev, [field]: numValue }));
+    setDimensions(prev => ({ ...prev, [field]: value }));
   };
 
-  // LPLWW-6: Derive validation message from current dimension state
-  const validationMessage = useMemo(() => {
-    const hasAnyValue = Object.values(dimensions).some(v => v !== '');
-    if (!hasAnyValue) return null;
-    const w = parseFloat(dimensions.width) || 0;
-    const d = parseFloat(dimensions.depth) || 0;
-    const h = parseFloat(dimensions.height) || 0;
-    if (w === 0 || d === 0 || h === 0) {
-      return 'All three dimensions need a value greater than zero to calculate.';
-    }
-    return null;
-  }, [dimensions]);
+  const handlePaste = (event, field) => {
+    const text = event.clipboardData.getData('text/plain');
+    if (!/[\r\n]/.test(text)) return;
 
-  const calculations = useMemo(() => {
-    const w = parseFloat(dimensions.width) || 0;
-    const d = parseFloat(dimensions.depth) || 0;
-    const h = parseFloat(dimensions.height) || 0;
+    // Text inputs can strip line breaks and join separate pasted values.
+    event.preventDefault();
+    const input = event.currentTarget;
+    input.setRangeText(text.replace(/\r\n?|\n/g, ' '), input.selectionStart, input.selectionEnd, 'end');
+    handleInputChange(field, input.value);
+  };
 
-    if (w <= 0 || d <= 0 || h <= 0) return null;
-
-    const paperDiagonal = Math.sqrt(w * w + d * d) + (2 * h);
-    const paperSide = paperDiagonal / Math.sqrt(2);
-
-    return {
-      paperSide: Math.round(paperSide * 10) / 10,
-      paperDiagonal: Math.round(paperDiagonal * 10) / 10
-    };
-  }, [dimensions]);
+  const { errors, incomplete, overflow, calculations, measurements } = useMemo(
+    () => validateDimensions(dimensions, unit),
+    [dimensions, unit]
+  );
 
   const unitLabel = unit === 'inches' ? 'in' : 'cm';
   const [expertMode, setExpertMode] = useState(false);
@@ -245,30 +231,44 @@ export default function Home() {
 
           <div className="border border-stone-200 dark:border-stone-700 rounded p-5 bg-white/30 dark:bg-stone-900/20">
             <div className="space-y-4">
-              {[
-                { key: 'width', label: 'w', name: 'width' },
-                { key: 'depth', label: 'd', name: 'depth' },
-                { key: 'height', label: 'h', name: 'height' }
-              ].map((field) => (
-                <div key={field.key} className="flex items-center gap-4">
-                  <span className="w-16 text-sm text-stone-500 dark:text-stone-400 font-mono select-none">
-                    {field.name}
-                  </span>
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={dimensions[field.key]}
-                      onChange={(e) => handleInputChange(field.key, e.target.value)}
-                      placeholder="—"
-                      className="w-full bg-transparent border-b border-stone-200 dark:border-stone-700 py-2 text-lg text-stone-800 dark:text-stone-200 font-light tracking-wide placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
-                    />
-                    <span className="absolute right-0 top-1/2 -translate-y-1/2 text-xs text-stone-400 dark:text-stone-500">
-                      {unitLabel}
-                    </span>
+              {['width', 'depth', 'height'].map((field) => {
+                const inputId = `dimension-${field}`;
+                const error = errors[field];
+                let feedbackId;
+                if (error) feedbackId = `${inputId}-error`;
+                else if (overflow) feedbackId = 'dimension-range-error';
+                else if (hasAnyDimension && incomplete.includes(field)) feedbackId = 'dimension-incomplete';
+
+                return (
+                  <div key={field} className="flex items-start gap-4">
+                    <label htmlFor={inputId} className="w-16 shrink-0 pt-3 text-sm text-stone-500 dark:text-stone-400 font-mono select-none">
+                      {field}
+                    </label>
+                    <div className="min-w-0 flex-1">
+                      <div className="relative">
+                        <input
+                          id={inputId}
+                          type="text"
+                          inputMode="decimal"
+                          value={dimensions[field]}
+                          onChange={(event) => handleInputChange(field, event.target.value)}
+                          onPaste={(event) => handlePaste(event, field)}
+                          placeholder="—"
+                          aria-invalid={error || overflow ? true : undefined}
+                          aria-describedby={feedbackId}
+                          className="w-full bg-transparent border-b border-stone-200 dark:border-stone-700 py-2 pr-8 text-lg text-stone-800 dark:text-stone-200 font-light tracking-wide placeholder:text-stone-300 dark:placeholder:text-stone-600 focus:outline-none focus:border-stone-400 dark:focus:border-stone-500 dark:aria-invalid:border-amber transition-colors"
+                        />
+                        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-xs text-stone-400 dark:text-stone-500 pointer-events-none">
+                          {unitLabel}
+                        </span>
+                      </div>
+                      <p id={`${inputId}-error`} aria-live="polite" className={error ? "mt-2 text-xs text-amber-bright" : undefined}>
+                        {error}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-4 tracking-wide select-none">
               All calculations assume a perfect square sheet.
@@ -276,75 +276,66 @@ export default function Home() {
           </div>
         </motion.section>
 
-        {/* LPLWW-6: Validation message for zero/incomplete dimensions */}
-        <AnimatePresence>
-          {validationMessage && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="text-xs text-stone-400 dark:text-stone-500 font-mono tracking-wide mb-6"
-            >
-              {validationMessage}
-            </motion.p>
-          )}
-        </AnimatePresence>
+        <p id="dimension-range-error" role="status" className={overflow ? "text-xs text-amber-bright font-mono tracking-wide mb-6" : undefined}>
+          {overflow && 'These measurements are too large to calculate together.'}
+        </p>
+        {incomplete.length > 0 && hasAnyDimension && (
+          <p id="dimension-incomplete" className="text-xs font-mono tracking-wide mb-6" style={{color: 'var(--text-secondary)'}}>
+            All three dimensions need a value greater than zero to calculate.
+          </p>
+        )}
 
         {/* Results */}
-        <AnimatePresence>
-          {calculations && (
-            <motion.section
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-12"
-            >
-              <div className="flex items-center gap-4 mb-6">
-                <span className="text-xs tracking-wide uppercase select-none" style={{color: 'var(--text-muted)'}}>Result</span>
-                <div className="flex-1 h-px" style={{backgroundColor: 'var(--amber-dim)'}} />
-                <button
-                  onClick={handleCopy}
-                  className="p-1.5 transition-colors select-none"
-                  style={{color: copied ? 'var(--lp-blue-bright)' : 'var(--text-muted)'}}
-                  onMouseEnter={e => e.currentTarget.style.color = 'var(--lp-blue-bright)'}
-                  onMouseLeave={e => e.currentTarget.style.color = copied ? 'var(--lp-blue-bright)' : 'var(--text-muted)'}
-                  aria-label="Copy results"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
+        {calculations && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-12"
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-xs tracking-wide uppercase select-none" style={{color: 'var(--text-muted)'}}>Result</span>
+              <div className="flex-1 h-px" style={{backgroundColor: 'var(--amber-dim)'}} />
+              <button
+                onClick={handleCopy}
+                className="p-1.5 transition-colors select-none"
+                style={{color: copied ? 'var(--lp-blue-bright)' : 'var(--text-muted)'}}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--lp-blue-bright)'}
+                onMouseLeave={e => e.currentTarget.style.color = copied ? 'var(--lp-blue-bright)' : 'var(--text-muted)'}
+                aria-label="Copy results"
+              >
+                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            <div className="font-mono text-sm space-y-1 mb-4">
+              <div className="flex items-baseline">
+                <span className="select-none w-44" style={{color: 'var(--text-muted)'}}>Required Square Side</span>
+                <span className="tabular-nums" style={{color: 'var(--amber-bright)'}}>{calculations.paperSide}</span>
+                <span className="text-stone-400 dark:text-stone-500 text-xs ml-1">{unitLabel}</span>
               </div>
-
-              <div className="font-mono text-sm space-y-1 mb-4">
-                <div className="flex items-baseline">
-                  <span className="select-none w-44" style={{color: 'var(--text-muted)'}}>Required Square Side</span>
-                  <span className="tabular-nums" style={{color: 'var(--amber-bright)'}}>{calculations.paperSide}</span>
-                  <span className="text-stone-400 dark:text-stone-500 text-xs ml-1">{unitLabel}</span>
-                </div>
-                <div className="flex items-baseline">
-                  <span className="select-none w-44" style={{color: 'var(--text-muted)'}}>Paper Diagonal</span>
-                  <span className="tabular-nums" style={{color: 'var(--amber-bright)'}}>{calculations.paperDiagonal}</span>
-                  <span className="text-stone-400 dark:text-stone-500 text-xs ml-1">{unitLabel}</span>
-                </div>
+              <div className="flex items-baseline">
+                <span className="select-none w-44" style={{color: 'var(--text-muted)'}}>Paper Diagonal</span>
+                <span className="tabular-nums" style={{color: 'var(--amber-bright)'}}>{calculations.paperDiagonal}</span>
+                <span className="text-stone-400 dark:text-stone-500 text-xs ml-1">{unitLabel}</span>
               </div>
+            </div>
 
-              {/* Expert Mode breakdown */}
-              {expertMode && (
-                <ExpertMode dimensions={dimensions} calculations={calculations} unit={unit} />
-              )}
+            {/* Expert Mode breakdown */}
+            {expertMode && (
+              <ExpertMode calculations={calculations} unit={unit} />
+            )}
 
-              {/* Visual Diagram */}
-              <div className="mt-6 mb-2">
-                <WrapDiagram dimensions={dimensions} calculations={calculations} />
-              </div>
+            {/* Visual Diagram */}
+            <div className="mt-6 mb-2">
+              <WrapDiagram dimensions={measurements} calculations={calculations} />
+            </div>
 
-              {/* Protocol Card */}
-              <ProtocolCard calculations={calculations} unit={unit} dimensions={dimensions} />
+            {/* Protocol Card */}
+            <ProtocolCard calculations={calculations} unit={unit} dimensions={measurements} />
 
-            </motion.section>
-          )}
-        </AnimatePresence>
+          </motion.section>
+        )}
 
         {/* Protocol Description */}
         <motion.section

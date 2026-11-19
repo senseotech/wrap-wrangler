@@ -13,8 +13,8 @@ import React from 'react';
  *   - Fold lines connect each diamond corner to the nearest two box corners
  */
 export default function WrapDiagram({ dimensions, calculations, className = '' }) {
-  const w = parseFloat(dimensions?.width) || 0;
-  const d = parseFloat(dimensions?.depth) || 0;
+  const w = dimensions?.width ?? 0;
+  const d = dimensions?.depth ?? 0;
   const hasValidDims = w > 0 && d > 0;
 
   // ViewBox is 120×120, center at (60, 60). 6px padding on each edge.
