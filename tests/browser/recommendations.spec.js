@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { expectClipboardText } from './clipboard.js';
 
 for (const { unit, alternateUnit, alternateSide, alternateDiagonal } of [
   { unit: 'in', alternateUnit: 'cm', alternateSide: 32.6, alternateDiagonal: 46.1 },
   { unit: 'cm', alternateUnit: 'in', alternateSide: 5.1, alternateDiagonal: 7.2 },
 ]) {
-  test(`shows the same ${unit} recommendation on screen, on the clipboard, and in print`, async ({ page }) => {
+  test(`shows the same ${unit} recommendation on screen, on the clipboard, and in print`, async ({ page, browserName }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Begin' }).click();
     if (unit === 'cm') {
@@ -34,9 +35,8 @@ for (const { unit, alternateUnit, alternateSide, alternateDiagonal } of [
     await expect(row(alternate, 'Paper Diagonal')).toHaveText(`Paper Diagonal${alternateDiagonal} ${alternateUnit}`);
 
     await page.getByRole('button', { name: 'Copy results' }).click();
-    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(
-      `Required Square Side: 12.9 ${unit}\nPaper Diagonal: 18.2 ${unit}`
-    );
+    await expect(page.getByText('Copied to clipboard', { exact: true })).toBeVisible();
+    await expectClipboardText(page, browserName, `Required Square Side: 12.9 ${unit}\nPaper Diagonal: 18.2 ${unit}`);
 
     // Keep the popup available for inspection without opening the OS print dialog.
     await page.evaluate(() => {

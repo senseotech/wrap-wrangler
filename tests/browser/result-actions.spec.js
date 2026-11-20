@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { expectClipboardText } from './clipboard.js';
 
 const expectedText = 'Required Square Side: 12.9 cm\nPaper Diagonal: 18.2 cm';
 const measurements = { width: '10', depth: '10', height: '2' };
@@ -50,7 +51,7 @@ test('shows copy success only after the clipboard write completes', async ({ pag
 });
 
 for (const failure of ['denied', 'unavailable']) {
-  test(`keeps the result manually copyable when clipboard access is ${failure}`, async ({ page, isMobile }) => {
+  test(`keeps the result manually copyable when clipboard access is ${failure}`, async ({ page, isMobile, browserName }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.evaluate(async failure => {
@@ -78,7 +79,7 @@ for (const failure of ['denied', 'unavailable']) {
       .toEqual([0, expectedText.length]);
     await fallback.press('ControlOrMeta+C');
     await page.evaluate(() => delete navigator.clipboard);
-    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(expectedText);
+    await expectClipboardText(page, browserName, expectedText);
     await expectMeasurementsPreserved(page);
     expect(errors).toEqual([]);
   });
