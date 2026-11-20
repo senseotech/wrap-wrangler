@@ -3,6 +3,8 @@ Years ago, a website existed that let you measure a gift, plug in the dimensions
 
 ## Browser tests
 
+The [GitHub Actions workflow](https://github.com/senseotech/wrap-wrangler/blob/main/.github/workflows/tests.yml) runs on pull requests. Its **Unit and browser tests** check must pass before a pull request can merge into `main`.
+
 ```sh
 npm ci
 npx playwright install chromium webkit
